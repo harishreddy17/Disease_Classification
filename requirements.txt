@@ -2,7 +2,8 @@ fastapi
 uvicorn
 torch
 torchvision
-pillow
+Pillow
 pytest
-psutil
 prometheus-client
+psutil
+requests

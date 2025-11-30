@@ -1,16 +1,10 @@
-version: "3"
-services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-  prometheus:
-    image: prom/prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY . .
+
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+EXPOSE 8000
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

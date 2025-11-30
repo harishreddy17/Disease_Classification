@@ -15,31 +15,37 @@ jobs:
         options: --privileged
 
     steps:
+    # 1. Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
+    # 2. Setup Python
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
 
+    # 3. Install dependencies
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install requests pytest
 
+    # 4. Run Unit Tests
     - name: Run Unit Tests
       run: pytest tests/test_unit.py --maxfail=1 --disable-warnings -q
 
+    # 5. Run Local Model Test
     - name: Run Local Model Test
       run: python local_test.py
 
+    # 6. Build Docker Image
     - name: Build Docker Image
       if: success()
-      run: |
-        docker build -t onion_classifier:latest .
+      run: docker build -t onion_classifier:latest .
 
+    # 7. Run Docker Container for Integration Test
     - name: Run Docker Container for Integration Test
       if: success()
       run: |
@@ -49,12 +55,13 @@ jobs:
         docker stop onion_api
         docker rm onion_api
 
+    # 8. Push Docker Image to Docker Hub
     - name: Push Docker Image
       if: success()
       env:
-        DOCKER_USERNAME: ${{ secrets.iharishreddy1713 }}
-        DOCKER_PASSWORD: ${{ secrets.Harish123@s }}
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: |
         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-        docker tag onion_classifier:latest yourdockerhub/onion_classifier:latest
-        docker push yourdockerhub/onion_classifier:latest
+        docker tag onion_classifier:latest $DOCKER_USERNAME/onion_classifier:latest
+        docker push $DOCKER_USERNAME/onion_classifier:latest
