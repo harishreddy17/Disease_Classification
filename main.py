@@ -1,35 +1,53 @@
+# main.py
+import os
+from src.config import load_config
 from src.dataset import OnionDataset
-from src.model import OnionResNet
+from src.model import OnionClassifier
 from src.trainer import Trainer
 from src.tester import Tester
-from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
-from config import DEVICE, BATCH_SIZE
+from torchvision.datasets import ImageFolder
 from src.logger import logger
 
-# Dataset paths
-train_dir = "dataset/train"
-val_dir = "dataset/val"
-test_dir = "dataset/test"
 
-# Initialize dataset
-dataset = OnionDataset(train_dir, val_dir)
-train_loader, val_loader = dataset.get_loaders()
+def main():
+    # -----------------------------
+    # Load configuration
+    # -----------------------------
+    cfg = load_config()
+    raw_dataset_dir = r"C:\Users\haris\OneDrive\Documents\image_classification\dataset"
 
-test_dataset = ImageFolder(test_dir, transform=dataset.val_transform)
-test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    # -----------------------------
+    # Initialize dataset
+    # -----------------------------
+    print("✅ Splitting dataset into train/val/test...")
+    dataset = OnionDataset(
+        raw_dir=raw_dataset_dir,
+        config=cfg,
+        augment=True,
+        split=False  # split into train/val/test automatically
+    )
+    train_loader, val_loader, test_loader = dataset.get_loaders()
+    print("✅ Dataset loaders ready.")
 
-# Model
-model_wrapper = OnionResNet()
+    # -----------------------------
+    # Initialize model
+    # -----------------------------
+    model_wrapper = OnionClassifier(cfg)
+    model_wrapper.model.to(cfg.device)
 
-# Train
-trainer = Trainer(model_wrapper, train_loader, val_loader)
-trainer.train()
+    # -----------------------------
+    # Training
+    # -----------------------------
+    trainer = Trainer(model_wrapper, train_loader, val_loader, cfg)
+    trainer.train()  # automatically saves the best model
 
-# Save
-model_wrapper.save("resnet_onion.pth")
-logger.info("Model saved to resnet_onion.pth")
+    # -----------------------------
+    # Testing
+    # -----------------------------
+    tester = Tester(model_wrapper, test_loader, cfg)
+    tester.evaluate()
 
-# Test
-tester = Tester(model_wrapper, test_loader)
-tester.evaluate()
+
+if __name__ == "__main__":
+    main()
